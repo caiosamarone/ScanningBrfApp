@@ -1,82 +1,118 @@
-import { StyleSheet, Text, SafeAreaView, View, Button } from "react-native";
-import { useState, useEffect } from "react";
-import { BarCodeScanner } from "expo-barcode-scanner";
+import {
+  StyleSheet,
+  Text,
+  SafeAreaView,
+  View,
+  Button,
+  TextInput,
+  Alert,
+  Modal,
+} from "react-native";
+import { useState, useRef } from "react";
+import ManualInputModal from "./src/modules/ManualInputModal";
+import PrimaryButton from "./src/components/PrimaryButton";
 
 export default function App() {
-  const [hasPermission, setHasPermission] = useState(false);
   const [scanData, setScanData] = useState([]);
-  const [lockedScan, setLockedScan] = useState(false);
-  const [isQrCodeVisible, setQrCodeVisible] = useState(true);
+  const [lockedInput, setLockedInput] = useState(false);
+  const [textScanned, setTextScanned] = useState("");
+  const [isModalManualInputVisible, setModalManualInputVisible] =
+    useState(false);
+  const ref_input = useRef();
 
-  useEffect(() => {
-    const requirePermission = async () => {
-      const { status } = await BarCodeScanner.requestPermissionsAsync();
-      setHasPermission(status === "granted");
-    };
-    requirePermission();
-  }, []);
-
-  useEffect(() => {
-    if (!!scanData.length) {
-      setLockedScan(true);
-      setTimeout(() => {
-        setLockedScan(false);
-      }, 3000);
-    }
-  }, [scanData]);
-
-  if (!hasPermission) {
-    return (
-      <View style={styles.container}>
-        <Text>Por favor, conceda permissão de acesso à câmera.</Text>
-      </View>
-    );
-  }
-
-  const handleBarCodeScanned = ({ type, data }) => {
-    // console.log(type, data);
-    if (data) {
-      setScanData((oldData) => [
-        ...(oldData || []),
-        {
-          data,
-          type,
-        },
-      ]);
-    }
+  const handleFocus = () => {
+    setLockedInput(true);
+    setTimeout(() => {
+      //colocar um Loader 'Carregando....'
+      setLockedInput(false);
+      ref_input.current.focus();
+    }, 2000);
   };
-  console.log(scanData.length);
+
+  const checkLengthOfNumbers = (textFormated) => {
+    return textFormated.toString().length;
+  };
+
+  const onReadQrCode = (text) => {
+    //perguntar quais são os numeros fixos que o Sap vai necessitar para pegar apenas os necessarios
+    // const slicedText = text.slice(0, 5);
+    const textFormated = text?.replace(/\D+/g, "");
+    const length = checkLengthOfNumbers(textFormated);
+
+    if (length < 10) {
+      Alert.alert("Para digitar manualmente, pressione o botão abaixo.");
+      return;
+    }
+    // if (scanData.includes(textFormated)) {
+    //   Alert.alert("Erro", "Este item já foi bipado.", [
+    //     { text: "Sorry!", style: "cancel" },
+    //   ]);
+    //   setTextScanned("");
+    //   handleFocus();
+    //   return;
+    // }
+
+    setScanData((oldData) => [...oldData, textFormated]);
+    setTextScanned("");
+    handleFocus();
+  };
+
   return (
     <SafeAreaView style={styles.container}>
-      {console.log("scandata", scanData)}
-
-      {isQrCodeVisible ? (
-        <View style={styles.insideContainer}>
-          <View style={styles.wrapper}>
-            <BarCodeScanner
-              style={StyleSheet.absoluteFillObject}
-              onBarCodeScanned={lockedScan ? undefined : handleBarCodeScanned}
-            />
-            {lockedScan && (
-              <Button
-                title="Carregando"
-                onPress={() => setScanData(undefined)}
-              />
-            )}
+      <ManualInputModal
+        visible={isModalManualInputVisible}
+        onClearInputText={() => setManualInputText("")}
+        onCloseModal={() => setModalManualInputVisible(false)}
+        onReadQrCode={onReadQrCode}
+      />
+      {/* <Modal
+        animationType={"slide"}
+        transparent={false}
+        visible={isModalManualInputVisible}
+        onRequestClose={() => {
+          setManualInputText("");
+          setModalManualInputVisible(false);
+        }}
+      >
+        <TextInput
+          placeholder="Digite aqui..."
+          autoFocus
+          autoCorrect={false}
+          value={manualInputText}
+          keyboardType="number-pad"
+          onChangeText={(text) => setManualInputText(text)}
+        />
+        <Button title="Enviar" onPress={handlePressManualButton} />
+      </Modal> */}
+      <View>
+        <TextInput
+          value={textScanned}
+          ref={ref_input}
+          autoCorrect={false}
+          autoFocus
+          editable={!lockedInput}
+          onChangeText={onReadQrCode}
+          showSoftInputOnFocus={false}
+          placeholder="Aguardando leitura..."
+        />
+        <View style={styles.infoWrapper}>
+          <View style={styles.buttonContainer}>
+            <PrimaryButton onPress={() => setModalManualInputVisible(true)}>
+              DIGITAR
+            </PrimaryButton>
           </View>
-          <Button title="Fechar" onPress={() => setQrCodeVisible(false)} />
+          <View style={styles.buttonContainer}>
+            <PrimaryButton onPress={() => Alert.alert("sicronizando...")}>
+              SINCRONIZAR
+            </PrimaryButton>
+          </View>
         </View>
-      ) : (
-        <View style={styles.container}>
-          <Button
-            title="Escanear novamente"
-            onPress={() => setQrCodeVisible(true)}
-          />
-          {scanData.map((i, index) => (
-            <Text key={index}>{i.data}</Text>
-          ))}
-        </View>
-      )}
+
+        <Text>Contador de Items registrados: {scanData.length}</Text>
+        {scanData.map((i, index) => (
+          <Text key={index}>{i}</Text>
+        ))}
+      </View>
     </SafeAreaView>
   );
 }
@@ -85,20 +121,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
-    flexDirection: "column",
-    justifyContent: "center",
-    alignItems: "center",
-    marginVertical: 20,
+    paddingTop: 50,
+    paddingHorizontal: 22,
   },
-  insideContainer: {
-    flex: 1,
-    height: "100%",
-    width: "100%",
+
+  infoWrapper: {
+    flexDirection: "row",
   },
-  wrapper: {
-    height: "70%",
-    width: "100%",
-    flexDirection: "column",
-    justifyContent: "flex-end",
+  buttonContainer: {
+    flex: 3,
   },
 });
