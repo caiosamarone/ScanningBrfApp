@@ -2,12 +2,7 @@ import { StyleSheet, Button, View, TextInput, Alert } from "react-native";
 import { useState } from "react";
 import Modal from "../../components/Modal";
 
-const ManualInputModal = ({
-  visible,
-  onClearInputText,
-  onCloseModal,
-  onReadQrCode,
-}) => {
+const ManualInputModal = ({ visible, onCloseModal, onReadQrCode }) => {
   const [manualInputText, setManualInputText] = useState("");
 
   const handlePressManualButton = () => {
@@ -29,7 +24,7 @@ const ManualInputModal = ({
       transparent={false}
       visible={visible}
       onRequestClose={() => {
-        onClearInputText();
+        setManualInputText("");
         onCloseModal();
       }}
     >
