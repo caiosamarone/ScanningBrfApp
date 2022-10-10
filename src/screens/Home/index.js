@@ -5,6 +5,8 @@ import {
   View,
   TextInput,
   Alert,
+  EventEmitter,
+  DeviceEventEmitter,
 } from "react-native";
 import { useState, useRef, useEffect } from "react";
 import PrimaryButton from "../../components/PrimaryButton";
@@ -15,13 +17,13 @@ import SincronizeSAP from "../SincronizeSAP";
 import Package from "../../utils/services/Package";
 import LoaderOverlay from "../../modules/LoaderOverlay";
 
-const Home = () => {
+const Home = ({ navigation }) => {
   const [scanData, setScanData] = useState([]);
   const [lockedInput, setLockedInput] = useState(false);
   const [loadingDatabase, setLoadingDatabase] = useState(false);
   const [textScanned, setTextScanned] = useState("");
   const [isSincronizeVisible, setSincronizeVisible] = useState(false);
-  const [sincronizeDialogVisible, setSincronizeDialogVisible] = useState(false);
+
   const ref_input = useRef();
 
   // Package.deleteAll().then((rows) => console.log("rowsAffected", rows));
@@ -29,12 +31,28 @@ const Home = () => {
   //   console.log("packages", packages);
   // });
 
+  const handleFocus = () => {
+    setLockedInput(true);
+    setTimeout(() => {
+      setLockedInput(false);
+      ref_input.current.focus();
+    }, 2000);
+  };
+
+  useEffect(() => {
+    DeviceEventEmitter.addListener("onHandleFocus", () => {
+      handleFocus();
+    });
+    return () => {
+      DeviceEventEmitter.removeAllListeners();
+    };
+  }, []);
+
   useEffect(() => {
     const getPackagesFromDatabase = async () => {
       setLoadingDatabase(true);
       try {
         const allPackages = await Package.findAll();
-        console.log("----------------", allPackages.length);
         setScanData([...allPackages] ?? []);
       } catch (er) {
         showToast("error", "Erro!");
@@ -73,14 +91,6 @@ const Home = () => {
     ),
   };
 
-  const handleFocus = () => {
-    setLockedInput(true);
-    setTimeout(() => {
-      setLockedInput(false);
-      ref_input.current.focus();
-    }, 2000);
-  };
-
   const showToast = (type, text1) => {
     const toastObject = {
       type,
@@ -93,7 +103,14 @@ const Home = () => {
   const onReadQrCode = async (text) => {
     const textFormated = text?.replace(/\D+/g, "");
 
-    // if (scanData.includes(textFormated)) {
+    //TODO validação se o item ja foi inserido ***
+
+    // const itemAlreadyInserted = scanData.findIndex(
+    //   (i) => i.qrCode === textFormated.toString()
+    // );
+    // console.log(itemAlreadyInserted);
+
+    // if (itemAlreadyInserted === -1) {
     //   Alert.alert("Erro", "Este item já foi bipado.", [
     //     { text: "Sorry!", style: "cancel" },
     //   ]);
@@ -167,13 +184,19 @@ const Home = () => {
             )}
 
             <Text style={styles.counterText}>
-              Contagem de Caixas lidas: {scanData.length}
+              Itens registrados: {scanData.length}
             </Text>
           </View>
           <ListItems data={scanData} resumedItems />
           {scanData?.length > 5 && (
             <View style={styles.buttonShowMoreContainer}>
-              <PrimaryButton onPress={() => Alert.alert("sicronizando...")}>
+              <PrimaryButton
+                onPress={() =>
+                  navigation.navigate("AllPackages", {
+                    scanData,
+                  })
+                }
+              >
                 VER MAIS
               </PrimaryButton>
             </View>

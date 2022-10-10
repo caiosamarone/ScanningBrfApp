@@ -21,22 +21,17 @@ const ListItems = ({ data, resumedItems }) => {
     </View>
   );
   return (
-    <View style={styles.container}>
-      <BigList
-        style={styles.container}
-        data={data}
-        renderItem={renderItem}
-        itemHeight={42}
-      />
+    <View style={styles.container(resumedItems)}>
+      <BigList data={data} renderItem={renderItem} itemHeight={42} />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 0.9,
+  container: (resumedItems) => ({
+    flex: resumedItems ? 0.9 : 0.93,
     marginVertical: 8,
-  },
+  }),
   itemContainer: {
     flexDirection: "row",
     width: "100%",

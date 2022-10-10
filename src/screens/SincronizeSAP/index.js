@@ -89,7 +89,8 @@ const SincronizeSAP = ({ isVisible, onClose }) => {
                 Tentar novamente
               </PrimaryButton>
             )}
-            <PrimaryButton onPress={closeModal}>Fechar</PrimaryButton>
+            {/* TODO Abortar Fetch: */}
+            <PrimaryButton onPress={closeModal}>FECHAR</PrimaryButton>
           </View>
         </View>
       </View>
