@@ -7,16 +7,16 @@ const ListItems = ({ data, resumedItems }) => {
   if (resumedItems) {
     data = data?.slice(0, 5);
   }
-  const renderItem = ({ item, index }) => (
+  const renderItem = ({ item }) => (
     <View style={styles.itemContainer}>
       <Text numberOfLines={1} style={{ width: 230, marginRight: 12 }}>
-        {item}
+        {item.qrCode}
       </Text>
       <Ionicons
         name="create"
         size={32}
         color="#72063c"
-        onPress={() => Alert.alert("Item", `${item}`)}
+        onPress={() => Alert.alert("Item", `${item.qrCode}`)}
       />
     </View>
   );
@@ -40,7 +40,6 @@ const styles = StyleSheet.create({
   itemContainer: {
     flexDirection: "row",
     width: "100%",
-    // justifyContent: "center",
     alignItems: "center",
   },
 });

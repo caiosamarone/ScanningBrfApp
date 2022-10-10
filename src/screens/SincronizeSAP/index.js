@@ -1,11 +1,4 @@
-import {
-  StyleSheet,
-  Text,
-  View,
-  Pressable,
-  Alert,
-  ActivityIndicator,
-} from "react-native";
+import { StyleSheet, Text, View, Alert, ActivityIndicator } from "react-native";
 import React, { useCallback, useEffect, useState } from "react";
 import Modal from "../../components/Modal";
 import checkUserConnection from "../../utils/api/checkUserConnection";
@@ -20,6 +13,7 @@ const SincronizeSAP = ({ isVisible, onClose }) => {
   });
 
   const handleSincronizeSAP = useCallback(async () => {
+    setLoading(true);
     setStartedSincronize(false);
     setError({});
     const { isConnected } = await checkUserConnection();
@@ -35,16 +29,16 @@ const SincronizeSAP = ({ isVisible, onClose }) => {
     try {
       setTimeout(() => {
         setStartedSincronize(true);
-        setError({
-          type: "network",
-          message: "Ocorreu um erro na sincronização. Tente novamente",
-        });
+        // setError({
+        //   type: "network",
+        //   message: "Ocorreu um erro na sincronização. Tente novamente",
+        // });
       }, 3000);
     } catch (er) {
       console.log(er);
     } finally {
-      // setLoading(false);
-      // setStartedSincronize(false)
+      setLoading(false);
+      setStartedSincronize(false);
     }
   }, []);
 
@@ -68,7 +62,6 @@ const SincronizeSAP = ({ isVisible, onClose }) => {
       visible={isVisible}
       onRequestClose={closeModal}
     >
-      {console.log("errrro", error.type)}
       <View style={styles.centeredView}>
         <View style={styles.modalView}>
           {error.type && <Text style={styles.modalText}>{error.message}</Text>}
