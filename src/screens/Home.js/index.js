@@ -14,7 +14,6 @@ import Toast, { BaseToast, ErrorToast } from "react-native-toast-message";
 import SincronizeSAP from "../SincronizeSAP";
 import Package from "../../utils/services/Package";
 import LoaderOverlay from "../../modules/LoaderOverlay";
-import SincronizeDialog from "../../components/DialogPopper";
 
 const Home = () => {
   const [scanData, setScanData] = useState([]);
@@ -118,7 +117,6 @@ const Home = () => {
       }
     } catch (e) {
       showToast("error", "Erro ao adicionar. Tente novamente.");
-      console.log(e);
     } finally {
       setTextScanned("");
       handleFocus();
@@ -158,7 +156,7 @@ const Home = () => {
               placeholder="Aguardando leitura..."
               style={styles.qrCodeInputText}
             />
-            {!!scanData.length && (
+            {!!scanData?.length && (
               <View style={styles.infoWrapper}>
                 <View style={styles.buttonSincronizeContainer}>
                   <PrimaryButton onPress={() => handleDialogSincronize()}>
