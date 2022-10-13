@@ -4,22 +4,23 @@ A React Native mobile app to read QRcodes
 
 ## Installation
 
-Make sure that you have Node installed, and ExpoCLI
+Make sure that you have Node installed, ExpoCLI and Android Studio
 
 ```bash
 npm install
+
+or
+
+yarn install
 ```
 
 ## To run
 
 > npm start
+or
+> yarn start
 
-## Contributing
+To run in a virtual emulator, create a new device in Android Studio. Once the project is running, type 'A' to open on the android emulator. 
 
-Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
+To run into a real mobile device make sure that your local project is connected in the same Wifi of your device. Make sure you have Expo GO app installed in your device. Then, you can sample read the qrCode genereted in your terminal, or connect your device via usb into the notebook / pc. After that, you can type 'A' to open in your device. 
 
-Please make sure to update tests as appropriate.
-
-## License
-
-[MIT](https://choosealicense.com/licenses/mit/)
