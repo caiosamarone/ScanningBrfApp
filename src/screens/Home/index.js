@@ -1,21 +1,17 @@
 import {
   StyleSheet,
-  Text,
   SafeAreaView,
-  View,
-  TextInput,
   Alert,
-  EventEmitter,
   DeviceEventEmitter,
 } from "react-native";
 import { useState, useRef, useEffect } from "react";
-import PrimaryButton from "../../components/PrimaryButton";
-import ListItems from "../../modules/ListItems";
-
-import Toast, { BaseToast, ErrorToast } from "react-native-toast-message";
-import SincronizeSAP from "../SincronizeSAP";
-import Package from "../../utils/services/Package";
-import LoaderOverlay from "../../modules/LoaderOverlay";
+import Toast from "react-native-toast-message";
+import { SincronizeSAP, ListItems, Loader } from "modules";
+import Package from "utils/services/Package";
+import { ToastConfig } from "utils/services/ToastConfig";
+import { checkItemAlreadyScanned } from "utils/helpers";
+import Header from "./Header";
+import ButtonShowMore from "./ButtonShowMore";
 
 const Home = ({ navigation }) => {
   const [scanData, setScanData] = useState([]);
@@ -26,17 +22,17 @@ const Home = ({ navigation }) => {
 
   const ref_input = useRef();
 
-  // Package.deleteAll().then((rows) => console.log("rowsAffected", rows));
-  // Package.findAll().then((packages) => {
-  //   console.log("packages", packages);
-  // });
-
   const handleFocus = () => {
     setLockedInput(true);
     setTimeout(() => {
       setLockedInput(false);
       ref_input.current.focus();
     }, 2000);
+  };
+
+  const deleteAllItens = async () => {
+    Package.deleteAll().then((rows) => console.log("rowsAffected", rows));
+    setScanData([]);
   };
 
   useEffect(() => {
@@ -55,7 +51,7 @@ const Home = ({ navigation }) => {
         const allPackages = await Package.findAll();
         setScanData([...allPackages] ?? []);
       } catch (er) {
-        showToast("error", "Erro!");
+        showToast("error", "Erro ao recuperar dados.");
         console.log(er);
       } finally {
         setLoadingDatabase(false);
@@ -64,47 +60,21 @@ const Home = ({ navigation }) => {
     getPackagesFromDatabase();
   }, []);
 
-  const toastConfig = {
-    success: (props) => (
-      <BaseToast
-        {...props}
-        style={{ backgroundColor: "green" }}
-        contentContainerStyle={{ paddingHorizontal: 15 }}
-        text1Style={{
-          fontSize: 22,
-          fontWeight: "400",
-          color: "white",
-        }}
-      />
-    ),
-    error: (props) => (
-      <ErrorToast
-        {...props}
-        style={{ backgroundColor: "red" }}
-        contentContainerStyle={{ paddingHorizontal: 15 }}
-        text1Style={{
-          fontSize: 22,
-          fontWeight: "400",
-          color: "white",
-        }}
-      />
-    ),
-  };
-
   const showToast = (type, text1) => {
     const toastObject = {
       type,
       text1,
     };
-
     Toast.show(toastObject);
   };
 
   const onReadQrCode = async (text) => {
     const textFormated = text?.replace(/\D+/g, "");
 
-    //TODO validação se o item ja foi inserido ***
+    const response = checkItemAlreadyScanned(textFormated, scanData);
 
+    //TODO validação se o item ja foi inserido ***
+    //usar a função checkItemAlreadyScanned
     // const itemAlreadyInserted = scanData.findIndex(
     //   (i) => i.qrCode === textFormated.toString()
     // );
@@ -142,15 +112,14 @@ const Home = ({ navigation }) => {
 
   const handleDialogSincronize = () => {
     Alert.alert(
-      "Atenção",
-      `Deseja sincronizar com o SAP ${scanData?.length} itens? É preciso estar conectado à internet, recomenda-se uma rede Wifi.`,
+      `Deseja sincronizar com o SAP ${scanData?.length} itens?`,
+      `É preciso estar conectado à internet, recomenda-se uma rede Wifi.Caso a sincronização ocorra com sucesso, os itens registrados serão removidos do seu celular.`,
       [
         {
-          text: "Cancel",
-          onPress: () => console.log("Cancel Pressed"),
+          text: "FECHAR",
           style: "cancel",
         },
-        { text: "OK", onPress: () => setSincronizeVisible(true) },
+        { text: "SINCRONIZAR", onPress: () => setSincronizeVisible(true) },
       ]
     );
   };
@@ -158,57 +127,33 @@ const Home = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       {loadingDatabase ? (
-        <LoaderOverlay />
+        <Loader />
       ) : (
         <>
-          <View>
-            <TextInput
-              value={textScanned}
-              ref={ref_input}
-              autoCorrect={false}
-              autoFocus
-              editable={!lockedInput}
-              onChangeText={onReadQrCode}
-              showSoftInputOnFocus={false}
-              placeholder="Aguardando leitura..."
-              style={styles.qrCodeInputText}
-            />
-            {!!scanData?.length && (
-              <View style={styles.infoWrapper}>
-                <View style={styles.buttonSincronizeContainer}>
-                  <PrimaryButton onPress={() => handleDialogSincronize()}>
-                    SINCRONIZAR
-                  </PrimaryButton>
-                </View>
-              </View>
-            )}
+          <Header
+            textScanned={textScanned}
+            ref_input={ref_input}
+            lockedInput={lockedInput}
+            onReadQrCode={onReadQrCode}
+            scanData={scanData}
+            handleDialogSincronize={handleDialogSincronize}
+          />
 
-            <Text style={styles.counterText}>
-              Itens registrados: {scanData.length}
-            </Text>
-          </View>
           <ListItems data={scanData} resumedItems />
+
           {scanData?.length > 5 && (
-            <View style={styles.buttonShowMoreContainer}>
-              <PrimaryButton
-                onPress={() =>
-                  navigation.navigate("AllPackages", {
-                    scanData,
-                  })
-                }
-              >
-                VER MAIS
-              </PrimaryButton>
-            </View>
+            <ButtonShowMore navigation={navigation} scanData={scanData} />
           )}
+
           <SincronizeSAP
             isVisible={isSincronizeVisible}
             onClose={() => setSincronizeVisible(false)}
+            onDeleteItens={deleteAllItens}
           />
         </>
       )}
 
-      <Toast config={toastConfig} visibilityTime={1800} topOffset={30} />
+      <Toast config={ToastConfig} visibilityTime={1800} topOffset={30} />
     </SafeAreaView>
   );
 };
@@ -219,31 +164,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#ecf0f1",
     paddingTop: 50,
     paddingHorizontal: 22,
-  },
-
-  infoWrapper: {
-    flexDirection: "row",
-  },
-  buttonSincronizeContainer: {
-    width: "100%",
-    flexDirection: "row",
-    justifyContent: "flex-end",
-  },
-  buttonShowMoreContainer: {
-    width: "100%",
-    flexDirection: "row",
-    justifyContent: "center",
-  },
-  qrCodeInputText: {
-    borderWidth: 1,
-    padding: 6,
-    borderColor: "#72063c",
-    marginBottom: 18,
-  },
-  counterText: {
-    marginTop: 18,
-    fontSize: 16,
-    fontWeight: "bold",
   },
 });
 

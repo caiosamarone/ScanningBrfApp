@@ -1,6 +1,6 @@
-import { StyleSheet, Button, View, TextInput, Alert } from "react-native";
+import { StyleSheet, Button, TextInput, Alert } from "react-native";
 import { useState } from "react";
-import Modal from "../../components/Modal";
+import { Modal } from "components/Modal";
 
 const ManualInputModal = ({ visible, onCloseModal, onReadQrCode }) => {
   const [manualInputText, setManualInputText] = useState("");

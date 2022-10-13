@@ -1,19 +1,37 @@
 import { StyleSheet, Text, View, Alert, ActivityIndicator } from "react-native";
 import React, { useCallback, useEffect, useState } from "react";
-import Modal from "../../components/Modal";
-import checkUserConnection from "../../utils/api/checkUserConnection";
-import PrimaryButton from "../../components/PrimaryButton";
+import checkUserConnection from "utils/api/checkUserConnection";
+import { Modal, PrimaryButton } from "components";
 
-const SincronizeSAP = ({ isVisible, onClose }) => {
-  const [loading, setLoading] = useState(true);
+const SincronizeSAP = ({ isVisible, onClose, onDeleteItens }) => {
   const [startedSincronize, setStartedSincronize] = useState(false);
   const [error, setError] = useState({
     message: "",
     type: "",
   });
+  let controller = new AbortController();
+  const closeModal = () => {
+    setError({});
+    setStartedSincronize(false);
+    onClose();
+  };
+  const handleSuccessSincronize = (itensSincronized) => {
+    //TODO ** pegar a quantidade de itens sincronizados no get
+    onDeleteItens();
+    Alert.alert(
+      `${itensSincronized} itens sincronizados com sucesso.`,
+      "Os itens sincronizados foram removidos localmente.",
+      [
+        {
+          text: "OK",
+          onPress: () => closeModal(),
+          style: "confirm",
+        },
+      ]
+    );
+  };
 
   const handleSincronizeSAP = useCallback(async () => {
-    setLoading(true);
     setStartedSincronize(false);
     setError({});
     const { isConnected } = await checkUserConnection();
@@ -27,17 +45,32 @@ const SincronizeSAP = ({ isVisible, onClose }) => {
     }
 
     try {
-      setTimeout(() => {
-        setStartedSincronize(true);
-        // setError({
-        //   type: "network",
-        //   message: "Ocorreu um erro na sincronização. Tente novamente",
-        // });
-      }, 3000);
+      setTimeout(async () => {
+        try {
+          setStartedSincronize(true);
+          let res = await fetch(
+            "https://api.github.com/users/caiosamarone/repos?sort=updated",
+            {
+              method: "GET",
+              signal: controller.signal,
+              headers: {
+                Accept: "application/json",
+                "Content-Type": "application/json",
+              },
+            }
+          );
+          res = await res.json();
+          const allReposName = res.map((i) => i.name);
+          if (!!Object.keys(allReposName).length) {
+            handleSuccessSincronize(100);
+          }
+        } catch (er) {
+          console.log(er);
+        }
+      }, 10000);
     } catch (er) {
       console.log(er);
     } finally {
-      setLoading(false);
       setStartedSincronize(false);
     }
   }, []);
@@ -48,11 +81,25 @@ const SincronizeSAP = ({ isVisible, onClose }) => {
     }
   }, [handleSincronizeSAP, isVisible]);
 
-  const closeModal = () => {
-    setError({});
-    setLoading(false);
-    setStartedSincronize(false);
-    onClose();
+  const handleDialogCancelSincronize = () => {
+    Alert.alert(
+      "Atenção",
+      "Deseja parar a sincronização? Os dados não serão sincronizados com o SAP.",
+      [
+        {
+          text: "CONTINUAR",
+          onPress: () => console.log("Cancel Pressed"),
+          style: "cancel",
+        },
+        {
+          text: "PARAR",
+          onPress: () => {
+            controller.abort();
+            closeModal();
+          },
+        },
+      ]
+    );
   };
 
   return (
@@ -60,7 +107,7 @@ const SincronizeSAP = ({ isVisible, onClose }) => {
       animationType={"slide"}
       transparent={false}
       visible={isVisible}
-      onRequestClose={closeModal}
+      onRequestClose={handleDialogCancelSincronize}
     >
       <View style={styles.centeredView}>
         <View style={styles.modalView}>
@@ -89,8 +136,10 @@ const SincronizeSAP = ({ isVisible, onClose }) => {
                 Tentar novamente
               </PrimaryButton>
             )}
-            {/* TODO Abortar Fetch: */}
-            <PrimaryButton onPress={closeModal}>FECHAR</PrimaryButton>
+
+            <PrimaryButton onPress={handleDialogCancelSincronize}>
+              FECHAR
+            </PrimaryButton>
           </View>
         </View>
       </View>

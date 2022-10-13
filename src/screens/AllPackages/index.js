@@ -1,7 +1,7 @@
 import React from "react";
 import { DeviceEventEmitter, StyleSheet, Text, View } from "react-native";
-import PrimaryButton from "../../components/PrimaryButton";
-import { ListItems } from "../../modules";
+import { PrimaryButton } from "components";
+import { ListItems } from "modules";
 
 const AllPackages = ({ route, navigation }) => {
   const { scanData } = route.params;
@@ -16,7 +16,7 @@ const AllPackages = ({ route, navigation }) => {
             navigation.navigate("Home");
           }}
         >
-          Voltar
+          VOLTAR
         </PrimaryButton>
       </View>
     </View>
