@@ -1,8 +1,6 @@
 const checkItemAlreadyScanned = (item, data) => {
-  console.log("item", item);
-  console.log("data", data);
-
-  return false;
+  const alreadyScanned = data.findIndex((i) => i.qrCode === item.toString());
+  return alreadyScanned === -1 ? false : true;
 };
 
 export default checkItemAlreadyScanned;

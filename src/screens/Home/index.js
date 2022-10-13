@@ -70,24 +70,16 @@ const Home = ({ navigation }) => {
 
   const onReadQrCode = async (text) => {
     const textFormated = text?.replace(/\D+/g, "");
+    const alreadyScanned = checkItemAlreadyScanned(textFormated, scanData);
 
-    const response = checkItemAlreadyScanned(textFormated, scanData);
-
-    //TODO validação se o item ja foi inserido ***
-    //usar a função checkItemAlreadyScanned
-    // const itemAlreadyInserted = scanData.findIndex(
-    //   (i) => i.qrCode === textFormated.toString()
-    // );
-    // console.log(itemAlreadyInserted);
-
-    // if (itemAlreadyInserted === -1) {
-    //   Alert.alert("Erro", "Este item já foi bipado.", [
-    //     { text: "Sorry!", style: "cancel" },
-    //   ]);
-    //   setTextScanned("");
-    //   handleFocus();
-    //   return;
-    // }
+    if (alreadyScanned) {
+      Alert.alert("Erro", "Este item já foi registrado.", [
+        { text: "Fechar", style: "cancel" },
+      ]);
+      setTextScanned("");
+      handleFocus();
+      return;
+    }
     try {
       const packageIdInserted = await Package.insert({
         qrCode: textFormated.toString(),
